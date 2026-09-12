@@ -5,7 +5,7 @@ import random
 import sys
 import smtplib
 from email.message import EmailMessage
-from flask import Flask
+from flask import Flask, redirect
 from threading import Thread
 
 # --- SECRETS (Fetched from Render Environment Variables) ---
@@ -27,12 +27,36 @@ HEADERS = {
     'Content-Type': 'application/json'
 }
 
-# --- KEEP ALIVE WEB SERVER ---
+# --- CONTROL STATE & WEB SERVER ---
+is_running = True  # Script starts in active state
+
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Farming bot is running!"
+    status_color = "#4CAF50" if is_running else "#f44336"
+    status_text = "RUNNING 🟢" if is_running else "PAUSED 🔴"
+    return f'''
+    <div style="text-align:center; font-family:Arial, sans-serif; margin-top:50px;">
+        <h1>OwO Bot Dashboard</h1>
+        <h2>Status: <span style="color:{status_color};">{status_text}</span></h2>
+        <br>
+        <a href="/start"><button style="padding:15px 30px; font-size:18px; background-color:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; margin-right:10px;">START BOT</button></a>
+        <a href="/stop"><button style="padding:15px 30px; font-size:18px; background-color:#f44336; color:white; border:none; border-radius:5px; cursor:pointer;">STOP BOT</button></a>
+    </div>
+    '''
+
+@app.route('/start')
+def start_bot():
+    global is_running
+    is_running = True
+    return redirect('/')
+
+@app.route('/stop')
+def stop_bot():
+    global is_running
+    is_running = False
+    return redirect('/')
 
 def run_server():
     port = int(os.environ.get('PORT', 8080))
@@ -50,7 +74,7 @@ def send_alert_email():
 
     try:
         msg = EmailMessage()
-        msg.set_content(f"An OwO captcha was detected on Discord. The farming script has immediately stopped to prevent a ban.")
+        msg.set_content("An OwO captcha was detected on Discord. The farming script has paused to prevent a ban.")
         msg['Subject'] = '🚨 OwO Captcha Alert!'
         msg['From'] = SENDER_EMAIL
         msg['To'] = RECEIVER_EMAIL
@@ -79,12 +103,14 @@ def check_for_captcha():
     return False
 
 def send_message(content, check_captcha=True):
+    global is_running
     if check_captcha and check_for_captcha():
         print("\n" + "="*50)
-        print("[!!!] CAPTCHA DETECTED! STOPPING SCRIPT [!!!]")
+        print("[!!!] CAPTCHA DETECTED! PAUSING SCRIPT [!!!]")
         print("="*50)
+        is_running = False  # Pauses the loop via state flag
         send_alert_email()
-        os._exit(0) # Forces the entire app, including the web server, to stop
+        return False
 
     try:
         response = requests.post(URL, headers=HEADERS, json={'content': content})
@@ -96,34 +122,41 @@ def send_message(content, check_captcha=True):
             time.sleep(retry_after)
     except Exception as e:
         print(f"Error: {e}")
+    return True
 
 def human_sleep(min_sec, max_sec):
     time.sleep(random.uniform(min_sec, max_sec))
 
 def run_farmer():
+    global is_running
     if not TOKEN:
         print("[!] ERROR: DISCORD_TOKEN environment variable is missing.")
         return
 
-    print("\nStarting continuous farming script.")
+    print("\nStarting continuous farming script worker.")
     loops = 0
 
     while True:
+        # If stopped from the web UI, wait without sending API requests
+        if not is_running:
+            time.sleep(2)
+            continue
+
         if ENABLE_BUY_COMMAND:
-            send_message("owo buy 1")
+            if not send_message("owo buy 1"): continue
             human_sleep(3.2, 4.2) 
-            send_message("owo")
+            if not send_message("owo"): continue
             human_sleep(3.2, 4.2)
-            send_message("owo buy 1")
+            if not send_message("owo buy 1"): continue
             human_sleep(3.2, 4.2)
-            send_message("owoh")
+            if not send_message("owoh"): continue
         else:
-            send_message("owo")
+            if not send_message("owo"): continue
             human_sleep(10.5, 12.0) 
-            send_message("owoh")
+            if not send_message("owoh"): continue
 
         human_sleep(0.5, 0.9)
-        send_message("owob", check_captcha=False)
+        if not send_message("owob", check_captcha=False): continue
         
         cooldown_sleep = random.uniform(3.5, 5.0)
         print(f"--> Cycle complete. Resting for {cooldown_sleep:.1f}s...\n")
@@ -134,12 +167,14 @@ def run_farmer():
         if loops % random.randint(20, 25) == 0:
             break_time = random.uniform(60, 120)
             print(f"\n[!] Taking a human break for {break_time:.1f} seconds...\n")
-            time.sleep(break_time)
+            for _ in range(int(break_time)):
+                if not is_running:
+                    break
+                time.sleep(1)
 
 if __name__ == "__main__":
-    keep_alive() # Starts the web server in the background
+    keep_alive()
     try:
         run_farmer()
     except KeyboardInterrupt:
         print("\nScript manually stopped.")
-        os._exit(0)
