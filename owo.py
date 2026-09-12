@@ -13,9 +13,9 @@ TOKEN = os.environ.get('DISCORD_TOKEN')
 EMAIL_APP_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 
 # --- CONFIGURATION ---
-CHANNEL_ID = 'YOUR_CHANNEL_ID'
-SENDER_EMAIL = 'your_email@gmail.com'
-RECEIVER_EMAIL = 'where_to_send_alert@gmail.com'
+CHANNEL_ID = '832183081825730630'
+SENDER_EMAIL = 'hatim4211786@gmail.com'
+RECEIVER_EMAIL = 'hatimmithaiwala786@gmail.com'
 
 # Set to True if you want the "owo buy 1" sequence included
 ENABLE_BUY_COMMAND = False 
