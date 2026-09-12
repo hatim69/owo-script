@@ -8,7 +8,8 @@ from threading import Thread
 
 # --- SECRETS (Fetched from Render Environment Variables) ---
 TOKEN = os.environ.get('DISCORD_TOKEN')
-WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+RECEIVER_EMAIL = os.environ.get('RECEIVER_EMAIL')
 
 # --- CONFIGURATION ---
 CHANNEL_ID = '1548427681140318321'
@@ -64,26 +65,28 @@ def keep_alive():
 
 # --- CORE SCRIPT ---
 def send_alert_email():
-    if not WEBHOOK_URL:
-        print("\n[-] Webhook URL missing. Skipping alert.")
+    if not RESEND_API_KEY or not RECEIVER_EMAIL:
+        print("\n[-] Resend credentials missing. Skipping email.")
         return
 
     try:
-        payload = {
-            "content": "🚨 **OwO Captcha Detected!**",
-            "embeds": [{
-                "title": "Captcha Detected",
-                "description": "An OwO captcha was detected on Discord. The farming script has paused to prevent a ban.",
-                "color": 16711680  # Red color
-            }]
+        headers = {
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json"
         }
-        response = requests.post(WEBHOOK_URL, json=payload)
-        if response.status_code == 204:
-            print("\n[+] Alert webhook sent successfully.")
+        payload = {
+            "from": "OwO Bot <onboarding@resend.dev>",
+            "to": [RECEIVER_EMAIL],
+            "subject": "🚨 OwO Captcha Alert!",
+            "html": "<p>An OwO captcha was detected on Discord. The farming script has paused to prevent a ban.</p>"
+        }
+        response = requests.post("https://api.resend.com/emails", headers=headers, json=payload)
+        if response.status_code == 200:
+            print("\n[+] Captcha alert email sent via Resend API.")
         else:
-            print(f"\n[-] Failed to send webhook. Status: {response.status_code}")
+            print(f"\n[-] Failed to send email: {response.text}")
     except Exception as e:
-        print(f"\n[-] Failed to send webhook: {e}")
+        print(f"\n[-] Failed to send email: {e}")
 
 def check_for_captcha():
     try:
