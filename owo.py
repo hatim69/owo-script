@@ -3,19 +3,15 @@ import requests
 import time
 import random
 import sys
-import smtplib
-from email.message import EmailMessage
 from flask import Flask, redirect
 from threading import Thread
 
 # --- SECRETS (Fetched from Render Environment Variables) ---
 TOKEN = os.environ.get('DISCORD_TOKEN')
-EMAIL_APP_PASSWORD = os.environ.get('EMAIL_PASSWORD')
+WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
 
 # --- CONFIGURATION ---
-CHANNEL_ID = '832183081825730630'
-SENDER_EMAIL = 'hatim4211786@gmail.com'
-RECEIVER_EMAIL = 'hatimmithaiwala786@gmail.com'
+CHANNEL_ID = '1548427681140318321'
 
 # Set to True if you want the "owo buy 1" sequence included
 ENABLE_BUY_COMMAND = False 
@@ -68,25 +64,26 @@ def keep_alive():
 
 # --- CORE SCRIPT ---
 def send_alert_email():
-    if not SENDER_EMAIL or not EMAIL_APP_PASSWORD or not RECEIVER_EMAIL:
-        print("\n[-] Email credentials missing. Skipping email alert.")
+    if not WEBHOOK_URL:
+        print("\n[-] Webhook URL missing. Skipping alert.")
         return
 
     try:
-        msg = EmailMessage()
-        msg.set_content("An OwO captcha was detected on Discord. The farming script has paused to prevent a ban.")
-        msg['Subject'] = '🚨 OwO Captcha Alert!'
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = RECEIVER_EMAIL
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(SENDER_EMAIL, EMAIL_APP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print("\n[+] Alert email sent successfully.")
+        payload = {
+            "content": "🚨 **OwO Captcha Detected!**",
+            "embeds": [{
+                "title": "Captcha Detected",
+                "description": "An OwO captcha was detected on Discord. The farming script has paused to prevent a ban.",
+                "color": 16711680  # Red color
+            }]
+        }
+        response = requests.post(WEBHOOK_URL, json=payload)
+        if response.status_code == 204:
+            print("\n[+] Alert webhook sent successfully.")
+        else:
+            print(f"\n[-] Failed to send webhook. Status: {response.status_code}")
     except Exception as e:
-        print(f"\n[-] Failed to send email: {e}")
+        print(f"\n[-] Failed to send webhook: {e}")
 
 def check_for_captcha():
     try:
@@ -121,7 +118,6 @@ def send_message(content, check_captcha=True):
             print(f"[{time.strftime('%X')}] Rate limited. Backing off for {retry_after}s...")
             time.sleep(retry_after)
         else:
-            # THIS LINE WILL REVEAL WHY IT IS FAILING
             print(f"[{time.strftime('%X')}] Failed to send. Status: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error: {e}")
@@ -181,3 +177,4 @@ if __name__ == "__main__":
         run_farmer()
     except KeyboardInterrupt:
         print("\nScript manually stopped.")
+        
