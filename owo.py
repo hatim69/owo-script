@@ -108,7 +108,7 @@ def send_message(content, check_captcha=True):
         print("\n" + "="*50)
         print("[!!!] CAPTCHA DETECTED! PAUSING SCRIPT [!!!]")
         print("="*50)
-        is_running = False  # Pauses the loop via state flag
+        is_running = False  
         send_alert_email()
         return False
 
@@ -120,6 +120,9 @@ def send_message(content, check_captcha=True):
             retry_after = response.json().get('retry_after', 5)
             print(f"[{time.strftime('%X')}] Rate limited. Backing off for {retry_after}s...")
             time.sleep(retry_after)
+        else:
+            # THIS LINE WILL REVEAL WHY IT IS FAILING
+            print(f"[{time.strftime('%X')}] Failed to send. Status: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error: {e}")
     return True
