@@ -12,7 +12,7 @@ RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
 RECEIVER_EMAIL = os.environ.get('RECEIVER_EMAIL')
 
 # --- CONFIGURATION ---
-CHANNEL_ID = '1548427681140318321'
+CHANNEL_ID = '1548645043189846038'
 
 # Set to True if you want the "owo buy 1" sequence included
 ENABLE_BUY_COMMAND = False 
