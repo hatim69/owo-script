@@ -175,9 +175,11 @@ def run_farmer():
                 time.sleep(1)
 
 if __name__ == "__main__":
+    # Start the farming loop in a background thread first
+    worker_thread = Thread(target=run_farmer, daemon=True)
+    worker_thread.start()
+    
+    # Then launch the web server dashboard
     keep_alive()
-    try:
-        run_farmer()
-    except KeyboardInterrupt:
-        print("\nScript manually stopped.")
+
         
