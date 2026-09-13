@@ -104,6 +104,8 @@ def check_for_captcha():
 
 def send_message(content, check_captcha=True):
     global is_running
+    print(f"[DEBUG] Attempting to send message: {content}") # Trace execution
+    
     if check_captcha and check_for_captcha():
         print("\n" + "="*50)
         print("[!!!] CAPTCHA DETECTED! PAUSING SCRIPT [!!!]")
@@ -113,7 +115,10 @@ def send_message(content, check_captcha=True):
         return False
 
     try:
-        response = requests.post(URL, headers=HEADERS, json={'content': content})
+        # Added a 10-second timeout so it never hangs infinitely
+        response = requests.post(URL, headers=HEADERS, json={'content': content}, timeout=10)
+        print(f"[DEBUG] Discord API response code: {response.status_code}")
+        
         if response.status_code == 200:
             print(f"[{time.strftime('%X')}] Sent: {content}")
         elif response.status_code == 429:
@@ -123,8 +128,9 @@ def send_message(content, check_captcha=True):
         else:
             print(f"[{time.strftime('%X')}] Failed to send. Status: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"[ERROR] Exception occurred during send_message: {e}")
     return True
+
 
 def human_sleep(min_sec, max_sec):
     time.sleep(random.uniform(min_sec, max_sec))
