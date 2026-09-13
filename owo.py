@@ -25,7 +25,7 @@ HEADERS = {
 }
 
 # --- CONTROL STATE & WEB SERVER ---
-is_running = True  # Script starts in active state
+is_running = False  # Script starts in active state
 
 app = Flask('')
 
@@ -139,10 +139,15 @@ def run_farmer():
     loops = 0
 
     while True:
+        print(f"[DEBUG] Loop iteration. is_running state: {is_running}") # ADD THIS LINE
+        
         # If stopped from the web UI, wait without sending API requests
         if not is_running:
             time.sleep(2)
             continue
+        
+        # ... rest of your code
+
 
         if ENABLE_BUY_COMMAND:
             if not send_message("owo buy 1"): continue
