@@ -1,0 +1,13 @@
+{
+  "name": "Status - Sims But Social",
+  "short_name": "Status",
+  "description": "A story-driven social media simulator prototype.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#7c3aed",
+  "icons": [
+    { "src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
